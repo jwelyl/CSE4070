@@ -18,8 +18,10 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
+
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
+void push_stack(const char* file_name, void **esp);
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -53,6 +55,8 @@ start_process (void *file_name_)
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
+
+//  printf("\n\n\n에헴1 : %s\n\n\n", file_name);
 
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
@@ -88,6 +92,11 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+  int i;
+  
+//  printf("\n\n\n에헴(process_wait)\n\n\n");
+  for(i = 0; i < 1000000000; i++);
+
   return -1;
 }
 
@@ -213,22 +222,48 @@ load (const char *file_name, void (**eip) (void), void **esp)
   struct file *file = NULL;
   off_t file_ofs;
   bool success = false;
-  int i;
+  int i, len = strlen(file_name);
+  char exec_file[128];  //  실행 파일 이름
 
+  memset(exec_file, 0, sizeof(char) * 128);
+//  printf("\n\n\n에헴에헴 : %d\n", len);
+
+  for(i = 0; i < len; i++) {
+    if(file_name[i] == '\0' || file_name[i] == ' ')
+      break;
+    exec_file[i] = file_name[i];
+    
+  }
+//  printf("\n\n\n에헤에에에헴 : %s\n", exec_file);
+
+//  printf("\n\n\n에헴3(load start) : %s\n\n\n", file_name);
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
   if (t->pagedir == NULL) 
     goto done;
   process_activate ();
 
+//  printf("\n\n\n에헴4 : %s\n\n\n", file_name);
   /* Open executable file. */
-  file = filesys_open (file_name);
+  //file = filesys_open (file_name);
+  file = filesys_open(exec_file);
+  
+//  printf("\n\n\n에헴4.5 : %d\n\n\n", file_name != NULL);
+  
   if (file == NULL) 
     {
+//      printf ("\n\n\n에헴(file == NULL)\n\n\n");
       printf ("load: %s: open failed\n", file_name);
       goto done; 
     }
 
+  //
+//  else {
+//    printf("\n\n\n에헴else : %s\n\n\n", file_name);
+//  }
+  //
+
+//  printf("\n\n\n에헴5 : %s\n\n\n", file_name);
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
       || memcmp (ehdr.e_ident, "\177ELF\1\1\1", 7)
@@ -242,6 +277,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
       goto done; 
     }
 
+//  printf("\n\n\n에헴6 : %s\n\n\n", file_name);
   /* Read program headers. */
   file_ofs = ehdr.e_phoff;
   for (i = 0; i < ehdr.e_phnum; i++) 
@@ -305,6 +341,9 @@ load (const char *file_name, void (**eip) (void), void **esp)
   if (!setup_stack (esp))
     goto done;
 
+  /* stack에 arguments 쌓음 */
+  push_stack(file_name, esp);
+
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
 
@@ -358,7 +397,9 @@ validate_segment (const struct Elf32_Phdr *phdr, struct file *file)
      it then user code that passed a null pointer to system calls
      could quite likely panic the kernel by way of null pointer
      assertions in memcpy(), etc. */
-  if (phdr->p_vaddr < PGSIZE)
+  
+  // 에헴 if (phdr->p_vaddr < PGSIZE)
+  if(phdr->p_vaddr < PGSIZE)
     return false;
 
   /* It's okay. */
@@ -451,7 +492,7 @@ setup_stack (void **esp)
    UPAGE must not already be mapped.
    KPAGE should probably be a page obtained from the user pool
    with palloc_get_page().
-   Returns true on success, false if UPAGE is already mapped or
+   Returns true on success, false if /UPAGE is already mapped or
    if memory allocation fails. */
 static bool
 install_page (void *upage, void *kpage, bool writable)
@@ -462,4 +503,120 @@ install_page (void *upage, void *kpage, bool writable)
      address, then map our page there. */
   return (pagedir_get_page (t->pagedir, upage) == NULL
           && pagedir_set_page (t->pagedir, upage, kpage, writable));
+}
+
+/* user stack 쌓는 함수 */
+void push_stack(const char* file_name, void** esp) {
+  char* argv[128];  //  parsing한 arguments들 저장
+  
+  /* parsing 위한 변수 */
+  char* token = NULL;
+  char* next = NULL;
+  char tmp[128];
+  int argc = 0;
+
+  int i, j, mod, len = strlen(file_name), arg_size = 0;
+  
+//  printf("\n\n\n에헴(push_stack)\n\n\n");
+  
+  memset(argv, 0, sizeof(char*) * 128);
+  memset(tmp, 0, sizeof(char) * 128);
+
+  /* 임시 문자열에 parsing 할 file_name 복사 */
+  for(i = 0; i < len; i++)
+    tmp[i] = file_name[i];
+
+//  printf("\n\n\n에헴(tmp) : %s\n\n\n", tmp);
+  
+  //  공백 기준 parsing
+  token = strtok_r(tmp, " ", &next);
+  if(token) {
+    argv[argc] = token;
+//    printf("\n\n\n에헴(token) : %s\n\n\n", argv[argc]);
+  }
+
+  while(token) {
+    argc++;
+    token = strtok_r(NULL, " ", &next);
+    
+    if(token) 
+      argv[argc] = token;
+  }
+
+  ///
+//  for(i = 0; i < argc; i++)
+//    printf("\n\n\n에헴(argv[%d]) : %s\n\n\n", i, argv[i]);
+//  printf("\n\n\n에헴(argc) : %d\n\n\n", argc);
+  ///
+  
+//  printf("\n\n\n에헴(초기 *esp) : %p\n\n\n", *esp);
+
+  /* arguments stack에 쌓음 */
+  for(i = argc - 1; i >= 0; i--) {
+    len = strlen(argv[i]) + 1;      
+    arg_size += len;
+    *esp -= len;
+    
+//   printf("argv[%d] : %s(%d)\n", i, argv[i], len);
+//   printf("에헴(현재 *esp) : %p\n\n", *esp);
+  
+    //  strncpy(*esp, argv[i], len);
+    strlcpy(*esp, argv[i], len); 
+//    printf("에헴(현재 stack에 쌓인 문자열) : %s\n", (char*)*esp);
+    argv[i] = *esp;
+  }
+//  printf("에헴(argument size) : %d\n\n", arg_size);
+
+  ///
+//  printf("\n에헴(uint8_t) : %d\n", sizeof(uint8_t));
+//  printf("에헴(char) : %d\n\n", sizeof(char));
+  ///
+
+  /* arguments 크기가 4의 배수가 안될경우 word-align 삽입 보정 */
+  if((mod = arg_size % 4) != 0) {
+    for(j = 0; j < (4 - mod); j++) {
+      *esp -= sizeof(uint8_t);
+//      printf("에헴(현재 *esp) : %p\n\n", *esp);
+    }
+  }
+  
+  ///
+//  for(i = argc - 1; i >= 0; i--) {
+//    printf("argv[%d] : %p\n", i, argv[i]);
+//  }
+  ///
+
+  argv[argc] = NULL;
+//  printf("에헴(sizeof(argv[%d])) : %d\n", argc, sizeof(argv[argc]));
+
+  /* argv[argc](NULL) 삽입 */
+  *esp -= sizeof(argv[argc]);
+//  printf("에헴(현재 *esp) : %p\n\n", *esp);
+
+  /* arguments 주소값 삽입 */
+  for(i = argc - 1; i >= 0; i--) {
+    *esp -= sizeof(argv[i]);
+    **(uint32_t**)esp = (uint32_t)argv[i];
+//    printf("에헴(sizeof(argv[%d])) : %d\n", i, sizeof(argv[i]));
+//    printf("에헴(argv[%d]) : %s(%p)\n", i, argv[i], argv[i]);
+//    printf("에헴(현재 *esp) : %p\n\n", *esp);
+  }
+
+  *esp -= 4;
+//  printf("에헴(현재 *esp) : %p\n\n", *esp);
+  //argv = *esp;
+  **(uint32_t**)esp = (uint32_t)(*esp + 4);
+//  printf("에헴(현재 stack에 쌓인 값) : %p\n", **(uint32_t**)esp);
+
+  /* argc 삽입 */
+  *esp -= sizeof(argc);
+//  printf("에헴(현재 *esp) : %p\n\n", *esp);
+  **(uint32_t**)esp = argc;
+//  printf("에헴(현재 stack에 쌓인 값) : %d\n", **(uint32_t**)esp);
+
+  /* return address 삽입 */
+  *esp -= 4;
+//  printf("에헴(현재 *esp) : %p\n\n", *esp);
+  **(uint32_t**)esp = 0;
+//  printf("에헴(현재 stack에 쌓인 값) : %d\n", **(uint32_t**)esp);
 }
