@@ -567,6 +567,7 @@ void push_stack(const char* file_name, void** esp) {
   if((mod = arg_size % 4) != 0) {
     for(j = 0; j < (4 - mod); j++) {
       *esp -= sizeof(uint8_t);
+     //  **(uint32_t**)esp = 0;
     }
   }
 
@@ -574,6 +575,7 @@ void push_stack(const char* file_name, void** esp) {
   
   /* argv[argc](NULL) 삽입 */
   *esp -= sizeof(argv[argc]);
+ // **(uint32_t**)esp = (uint32_t)argv[argc];
 
   /* arguments 주소값 삽입 */
   for(i = argc - 1; i >= 0; i--) {
@@ -594,7 +596,7 @@ void push_stack(const char* file_name, void** esp) {
   **(uint32_t**)esp = 0;
 
   /* for debugging */
-  /*
+ /* 
   printf("\n\nhex_dump in push_stack\n");
   hex_dump(*esp, *esp, 100, 1);
   printf("\n"); 
