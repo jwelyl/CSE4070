@@ -19,6 +19,9 @@ enum
     SYS_TELL,                   /* Report current position in a file. */
     SYS_CLOSE,                  /* Close a file. */
 
+    SYS_FIBO,                   /* n번째 피보나치 수 반환 */
+    SYS_MAX4,                   /* 4개의 정수 중 가장 큰 것 반환 */
+
     /* Project 3 and optionally project 4. */
     SYS_MMAP,                   /* Map a file into memory. */
     SYS_MUNMAP,                 /* Remove a memory mapping. */

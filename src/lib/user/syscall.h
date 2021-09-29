@@ -34,6 +34,9 @@ void seek (int fd, unsigned position);
 unsigned tell (int fd);
 void close (int fd);
 
+int fibonacci(int n);
+int max_of_four_int(int num1, int num2, int num3, int num4);
+
 /* Project 3 and optionally project 4. */
 mapid_t mmap (int fd, void *addr);
 void munmap (mapid_t);

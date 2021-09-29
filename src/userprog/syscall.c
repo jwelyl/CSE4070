@@ -67,6 +67,22 @@ syscall_handler (struct intr_frame *f)
       f->eax = my_write((int)*(uint32_t*)(f->esp + 4), (void*)*(uint32_t*)(f->esp + 8), 
         (unsigned)*((uint32_t*)(f->esp + 12)));
       break;
+  
+    case SYS_FIBO:
+      if(!is_user_vaddr(f->esp + 4))
+        my_exit(-1);
+
+      f->eax = my_fibonacci((int)*(uint32_t*)(f->esp + 4));
+      break;
+
+    case SYS_MAX4:
+      if(!is_user_vaddr(f->esp + 4) || !is_user_vaddr(f->esp + 8) ||
+         !is_user_vaddr(f->esp + 12) || !is_user_vaddr(f->esp + 16))
+        my_exit(-1);
+
+      f->eax = my_max_of_four_int((int)*(uint32_t*)(f->esp + 4), (int)*(uint32_t*)(f->esp + 8), 
+                      (int)*(uint32_t*)(f->esp + 12), (int)*(uint32_t*)(f->esp + 16)); 
+      break;
   }
 
   //  thread_exit ();
@@ -107,9 +123,35 @@ int my_write(int fd, const void* buffer, unsigned size) {
   //printf("출력 위치 : %p\n", buffer);
 
   if(fd == 1) {
-    putbuf(buffer, size);
+    putbuf((const char*)buffer, size);
     return size;
   }
   else return -1;
 }
 
+int my_fibonacci(int n) {
+  int f1 = 1, f2 = 1;
+  int i, ret;
+
+  if(n == 0) ret = 0;
+  else if(n < 3) ret = 1;
+  else {
+    for(i = 3; i <= n; i++) {
+      ret = f1 + f2;
+      f1 = f2;
+      f2 = ret;
+    }
+  }
+
+  return ret;
+}
+
+int my_max_of_four_int(int num1, int num2, int num3, int num4) {
+  int ret = num1;
+
+  if(ret < num2) ret = num2;
+  if(ret < num3) ret = num3;
+  if(ret < num4) ret = num4;
+
+  return ret; 
+}

@@ -200,3 +200,12 @@ inumber (int fd)
 {
   return syscall1 (SYS_INUMBER, fd);
 }
+
+int fibonacci(int n) {
+  return syscall1 (SYS_FIBO, n);
+}
+
+int max_of_four_int(int num1, int num2, int num3, int num4) {
+  return syscall4(SYS_MAX4, num1, num2, num3, num4);
+}
+

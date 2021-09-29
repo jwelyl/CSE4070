@@ -14,5 +14,7 @@ int my_open(const char* file);
 int my_filesize(int fd);
 int my_read(int fd, void* buffer, unsigned size);
 int my_write(int fd, const void* buffer, unsigned size);
+int my_fibonacci(int n);
+int my_max_of_four_int(int num1, int num2, int num3, int num4);
 
 #endif /* userprog/syscall.h */
