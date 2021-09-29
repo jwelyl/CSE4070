@@ -46,7 +46,7 @@ syscall_handler (struct intr_frame *f)
       break;
     
     case SYS_WAIT:
-      my_wait((pid_t)*(uint32_t*)(f->esp + 4));
+      f->eax = my_wait((pid_t)*(uint32_t*)(f->esp + 4));
       break;
     
     case SYS_READ:
@@ -91,6 +91,7 @@ void my_halt(void) {
 
 void my_exit(int status) {
   printf("%s: exit(%d)\n", thread_name(), status);
+  thread_current() -> exit_status = status;
   thread_exit();
 }
 
