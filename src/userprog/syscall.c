@@ -45,26 +45,11 @@ syscall_handler (struct intr_frame *f)
       if(!is_user_vaddr(f->esp + 4))
         my_exit(-1);
 
+      f->eax = my_exec((const char*)*(uint32_t*)(f->esp + 4));
       break;
     
     case SYS_WAIT:
       my_wait((pid_t)*(uint32_t*)(f->esp + 4));
-      break;
-    
-    case SYS_CREATE:
-//      printf("SYS_CREATE\n");
-      break;
-    
-    case SYS_REMOVE:
-//      printf("SYS_REMOVE\n");
-      break;
-    
-    case SYS_OPEN:
-//      printf("SYS_OPEN\n");
-      break;
-    
-    case SYS_FILESIZE:
-//      printf("SYS_FILESIZE\n");
       break;
     
     case SYS_READ:
@@ -81,18 +66,6 @@ syscall_handler (struct intr_frame *f)
 
       f->eax = my_write((int)*(uint32_t*)(f->esp + 4), (void*)*(uint32_t*)(f->esp + 8), 
         (unsigned)*((uint32_t*)(f->esp + 12)));
-      break;
-    
-    case SYS_SEEK:
-//      printf("SYS_SEEK\n");
-      break;
-    
-    case SYS_TELL:
-//      printf("SYS_TELL");
-      break;
-    
-    case SYS_CLOSE:
-//      printf("SYS_CLOSE");
       break;
   }
 
@@ -140,9 +113,3 @@ int my_write(int fd, const void* buffer, unsigned size) {
   else return -1;
 }
 
-/*
-void check_user_vaddr(const void* vaddr) {
-  if(!is_user_vaddr(vaddr)) {
-    exit(-1);
-  }
-}*/
