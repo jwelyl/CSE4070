@@ -151,7 +151,7 @@ page_fault (struct intr_frame *f)
   user = (f->error_code & PF_U) != 0;
 
   /* user access가 아니거나 kernel에 접근할 경우 */
-  if(!user || is_kernel_vaddr(fault_addr)) 
+  if(!user || !is_user_vaddr(fault_addr)) 
     my_exit(-1);
 
   /* To implement virtual memory, delete the rest of the function

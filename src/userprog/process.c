@@ -102,11 +102,7 @@ int
 process_wait (tid_t child_tid) 
 {
   int i;
-  
-//  printf("\n\n\n에헴(process_wait)\n\n\n");
   for(i = 0; i < 1000000000; i++);
-
-  return -1;
 }
 
 /* Free the current process's resources. */
