@@ -21,9 +21,6 @@ syscall_handler (struct intr_frame *f)
 {
   uint32_t sys_num = *(uint32_t*)(f->esp);
   /*
-  printf("에헴(syscall.c) sys_num : %d\n", sys_num);
-  printf("에헴(syscall.c) esp : %p\n\n", f->esp);
-
   printf("hex_dump in syscall_handler\n");
   hex_dump(f->esp, f->esp, 320, 1);
   printf("\n\n");
@@ -107,11 +104,17 @@ int my_wait(pid_t pid) {
 
 int my_read(int fd, void* buffer, unsigned size) {
   int i;
+
+  //  STDIN
   if(fd == 0) {
     for(i = 0; i < size; i++) {
+      /*
       if(((char*)buffer)[i] == '\0') {
         break;
       }
+      */
+      if((((char*)buffer)[i] = input_getc()) == '\0') 
+        break;
     }
   }
 
@@ -120,8 +123,6 @@ int my_read(int fd, void* buffer, unsigned size) {
 
 int my_write(int fd, const void* buffer, unsigned size) {
   //  STDOUT
-  //printf("출력 위치 : %p\n", buffer);
-
   if(fd == 1) {
     putbuf((const char*)buffer, size);
     return size;

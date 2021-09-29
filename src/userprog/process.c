@@ -232,7 +232,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
   char exec_file[128];  //  실행 파일 이름
 
   memset(exec_file, 0, sizeof(char) * 128);
-//  printf("\n\n\n에헴에헴 : %d\n", len);
 
   for(i = 0; i < len; i++) {
     if(file_name[i] == '\0' || file_name[i] == ' ')
@@ -241,34 +240,23 @@ load (const char *file_name, void (**eip) (void), void **esp)
     
   }
 
-//  printf("\n\n\n에헴3(load start) : %s\n\n\n", file_name);
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
   if (t->pagedir == NULL) 
     goto done;
   process_activate ();
 
-//  printf("\n\n\n에헴4 : %s\n\n\n", file_name);
   /* Open executable file. */
   //file = filesys_open (file_name);
   file = filesys_open(exec_file);
   
-//  printf("\n\n\n에헴4.5 : %d\n\n\n", file_name != NULL);
   
   if (file == NULL) 
     {
-//      printf ("\n\n\n에헴(file == NULL)\n\n\n");
       printf ("load: %s: open failed\n", file_name);
       goto done; 
     }
 
-  //
-//  else {
-//    printf("\n\n\n에헴else : %s\n\n\n", file_name);
-//  }
-  //
-
-//  printf("\n\n\n에헴5 : %s\n\n\n", file_name);
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
       || memcmp (ehdr.e_ident, "\177ELF\1\1\1", 7)
@@ -282,7 +270,6 @@ load (const char *file_name, void (**eip) (void), void **esp)
       goto done; 
     }
 
-//  printf("\n\n\n에헴6 : %s\n\n\n", file_name);
   /* Read program headers. */
   file_ofs = ehdr.e_phoff;
   for (i = 0; i < ehdr.e_phnum; i++) 
@@ -403,7 +390,6 @@ validate_segment (const struct Elf32_Phdr *phdr, struct file *file)
      could quite likely panic the kernel by way of null pointer
      assertions in memcpy(), etc. */
   
-  // 에헴 if (phdr->p_vaddr < PGSIZE)
   if(phdr->p_vaddr < PGSIZE)
     return false;
 
@@ -522,22 +508,17 @@ void push_stack(const char* file_name, void** esp) {
 
   int i, j, mod, len = strlen(file_name), arg_size = 0;
   
- // printf("\n\n\n에헴(push_stack)\n\n\n");
-  
   memset(argv, 0, sizeof(char*) * 128);
   memset(tmp, 0, sizeof(char) * 128);
 
   /* 임시 문자열에 parsing 할 file_name 복사 */
   for(i = 0; i < len; i++)
     tmp[i] = file_name[i];
-
-//  printf("\n\n\n에헴(tmp) : %s\n\n\n", tmp);
   
   //  공백 기준 parsing
   token = strtok_r(tmp, " ", &next);
   if(token) {
     argv[argc] = token;
-//    printf("\n\n\n에헴(token) : %s\n\n\n", argv[argc]);
   }
 
   while(token) {
@@ -554,17 +535,14 @@ void push_stack(const char* file_name, void** esp) {
     arg_size += len;
     *esp -= len;
   
-    //  strncpy(*esp, argv[i], len);
     strlcpy(*esp, argv[i], len); 
     argv[i] = *esp;
   }
 
   /* arguments 크기가 4의 배수가 안될경우 word-align 삽입 보정 */
   if((mod = arg_size % 4) != 0) {
-    for(j = 0; j < (4 - mod); j++) {
+    for(j = 0; j < (4 - mod); j++) 
       *esp -= sizeof(uint8_t);
-     //  **(uint32_t**)esp = 0;
-    }
   }
 
   argv[argc] = NULL;
@@ -588,10 +566,8 @@ void push_stack(const char* file_name, void** esp) {
 
   /* return address 삽입 */
   *esp -= 4;
-  //printf("에헴(현재 *esp) : %p\n\n", *esp);
   **(uint32_t**)esp = 0;
 
-  /* for debugging */
  /* 
   printf("\n\nhex_dump in push_stack\n");
   hex_dump(*esp, *esp, 100, 1);
