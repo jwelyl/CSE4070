@@ -150,18 +150,19 @@ page_fault (struct intr_frame *f)
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
 
-  /* user access가 아니거나 kernel에 접근할 경우 */
-  if(!user || !is_user_vaddr(fault_addr)) 
-    my_exit(-1);
-
-  /* To implement virtual memory, delete the rest of the function
-     body, and replace it with code that brings in the page to
-     which fault_addr refers. */
-  printf ("Page fault at %p: %s error %s page in %s context.\n",
+  /* user access이고 user memory에 접근하는 경우 */
+  if(user && is_user_vaddr(fault_addr)) {
+    /* To implement virtual memory, delete the rest of the function
+       body, and replace it with code that brings in the page to
+      which fault_addr refers. */
+    printf ("Page fault at %p: %s error %s page in %s context.\n",
           fault_addr,
           not_present ? "not present" : "rights violation",
           write ? "writing" : "reading",
           user ? "user" : "kernel");
-  kill (f);
+    kill (f);
+  }
+  /* kernel access거나 user_memory가 아닌 곳에 접근할 경우 */
+  else my_exit(-1);
 }
 

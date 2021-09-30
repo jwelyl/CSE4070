@@ -465,11 +465,11 @@ init_thread (struct thread *t, const char *name, int priority)
   t->magic = THREAD_MAGIC;
   list_push_back(&all_list, &t->allelem);
 
-  /*
+  
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);
-  */
+  
 #ifdef USERPROG
   sema_init(&(t->child_lock), 0);
   sema_init(&(t->mem_lock), 0);
