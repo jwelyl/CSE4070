@@ -69,8 +69,6 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
 
-//  printf("\n\n\n에헴1 : %s\n\n\n", file_name);
-
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
@@ -107,24 +105,30 @@ process_wait (tid_t child_tid)
 {
 //  int i;
 //  for(i = 0; i < 1000000000; i++);
-  struct list_elem* e;
-  struct thread* t = NULL;
-  int exit_status;
 
-  for(e = list_begin(&(thread_current() -> child)); 
-      e != list_end(&(thread_current() -> child)); 
-      e = list_next(e)) {
-    t = list_entry(e, struct thread, child_elem);
+  struct thread* cur = thread_current(); 
+  struct list_elem* elm = list_begin(&(cur->list_child));
+  struct thread* t = NULL;
+  int ret; 
+
+  while(elm != list_end(&(cur->list_child))) {
+    t = list_entry(elm, struct thread, child_elm);
+
     if(child_tid == t->tid) {
-      sema_down(&(t->child_lock));
-      exit_status = t->exit_status;
-      list_remove(&(t->child_elem));
-      sema_up(&(t->mem_lock));
-      return exit_status;
+      sema_down(&(t->wait_lock));
+      ret = t->exit_status;
+      list_remove(&(t->child_elm));
+      sema_up(&(t->execute_lock));
+      break;
     }
+
+    elm = list_next(elm);
   }
 
-  return -1;
+  if(elm == list_end(&(cur->list_child)))
+    ret = -1;
+
+  return ret;
 }
 
 /* Free the current process's resources. */
@@ -150,8 +154,8 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
-  sema_up(&(cur->child_lock));
-  sema_down(&(cur->mem_lock));
+  sema_up(&(cur->wait_lock));
+  sema_down(&(cur->execute_lock));
 }
 
 /* Sets up the CPU for running user code in the current
@@ -356,7 +360,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   /* Set up stack. */
   if (!setup_stack (esp))
     goto done;
-
+  
   /* stack에 arguments 쌓음 */
   push_stack(file_name, esp);
 
@@ -559,7 +563,7 @@ void push_stack(const char* file_name, void** esp) {
     arg_size += len;
     *esp -= len;
   
-    strlcpy(*esp, argv[i], len); 
+    strlcpy(*esp, argv[i], len);
     argv[i] = *esp;
   }
 

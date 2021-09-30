@@ -109,11 +109,6 @@ int my_read(int fd, void* buffer, unsigned size) {
   //  STDIN
   if(fd == 0) {
     for(i = 0; i < size; i++) {
-      /*
-      if(((char*)buffer)[i] == '\0') {
-        break;
-      }
-      */
       if((((char*)buffer)[i] = input_getc()) == '\0') 
         break;
     }
