@@ -97,13 +97,16 @@ struct thread
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
-
-    struct semaphore child_lock;
-    struct semaphore mem_lock;
-    struct list child;
-    struct list_elem child_elem;
-    int exit_status;
 #endif
+    //  thread 종료 상태
+    int exit_status;
+    //  thread의 child list
+    struct list list_child;
+    struct list_elem child_elm;
+
+    struct semaphore wait_lock;
+    struct semaphore execute_lock;
+
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
