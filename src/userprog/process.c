@@ -115,10 +115,12 @@ process_wait (tid_t child_tid)
     t = list_entry(elm, struct thread, child_elm);
 
     if(child_tid == t->tid) {
+     
       sema_down(&(t->wait_lock));
+      sema_up(&(t->execute_lock));
+      
       ret = t->exit_status;
       list_remove(&(t->child_elm));
-      sema_up(&(t->execute_lock));
       break;
     }
 
