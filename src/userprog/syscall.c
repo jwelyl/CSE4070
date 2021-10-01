@@ -104,17 +104,19 @@ int my_wait(pid_t pid) {
 }
 
 int my_read(int fd, void* buffer, unsigned size) {
-  int i;
+  int i, ret = 0;
 
   //  STDIN
   if(fd == 0) {
     for(i = 0; i < size; i++) {
       if((((char*)buffer)[i] = input_getc()) == '\0') 
         break;
+      ret += 1;
     }
   }
+  else ret = -1;
 
-  return 0;
+  return ret;
 }
 
 int my_write(int fd, const void* buffer, unsigned size) {

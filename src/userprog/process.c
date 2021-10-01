@@ -109,7 +109,7 @@ process_wait (tid_t child_tid)
   struct thread* cur = thread_current(); 
   struct list_elem* elm = list_begin(&(cur->list_child));
   struct thread* t = NULL;
-  int ret; 
+  int ret = -1; 
 
   while(elm != list_end(&(cur->list_child))) {
     t = list_entry(elm, struct thread, child_elm);
