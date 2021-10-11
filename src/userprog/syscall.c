@@ -49,6 +49,18 @@ syscall_handler (struct intr_frame *f)
       f->eax = my_wait((pid_t)*(uint32_t*)(f->esp + 4));
       break;
     
+    case SYS_CREATE:
+      break;
+
+    case SYS_REMOVE:
+      break;
+
+    case SYS_OPEN:
+      break;
+
+    case SYS_FILESIZE:
+      break;
+
     case SYS_READ:
       if(!is_user_vaddr(f->esp + 4) || !is_user_vaddr(f->esp + 8) || !is_user_vaddr(f->esp + 12))
         my_exit(-1);
@@ -65,6 +77,15 @@ syscall_handler (struct intr_frame *f)
         (unsigned)*((uint32_t*)(f->esp + 12)));
       break;
   
+    case SYS_SEEK:
+      break;
+
+    case SYS_TELL:
+      break;
+
+    case SYS_CLOSE:
+      break;
+
     case SYS_FIBO:
       if(!is_user_vaddr(f->esp + 4))
         my_exit(-1);
