@@ -5,6 +5,7 @@
 #include <list.h>
 #include <stdint.h>
 #include "synch.h"
+#include "filesys/file.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -100,6 +101,8 @@ struct thread
 #endif
     //  thread 종료 상태
     int exit_status;
+    //  thread file descriptor
+    
     //  thread의 child list
     struct list list_child;
     struct list_elem child_elm;
@@ -107,6 +110,9 @@ struct thread
     struct semaphore wait_lock;
     struct semaphore execute_lock;
 
+    //  file descriptor
+    struct file* fd[128];
+    //  int fd[128];
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */

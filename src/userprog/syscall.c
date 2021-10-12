@@ -6,9 +6,11 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "process.h"
+#include "threads/synch.h"
+#include "filesys/file.h"
+#include "filesys/filesys.h"
 
 static void syscall_handler (struct intr_frame *);
-//void check_user_vaddr(const void* vaddr);
 
 void
 syscall_init (void) 
@@ -26,7 +28,7 @@ syscall_handler (struct intr_frame *f)
   printf("\n\n");
 */
   switch(sys_num) {
-    /* Project 1~2 User Program */
+    /* Project 1 User Program */
     case SYS_HALT:
       my_halt();
     
@@ -48,19 +50,8 @@ syscall_handler (struct intr_frame *f)
     case SYS_WAIT:
       f->eax = my_wait((pid_t)*(uint32_t*)(f->esp + 4));
       break;
-    
-    case SYS_CREATE:
-      break;
 
-    case SYS_REMOVE:
-      break;
-
-    case SYS_OPEN:
-      break;
-
-    case SYS_FILESIZE:
-      break;
-
+    /* Proj1 STDIN, Proj2 FILE INPUT */
     case SYS_READ:
       if(!is_user_vaddr(f->esp + 4) || !is_user_vaddr(f->esp + 8) || !is_user_vaddr(f->esp + 12))
         my_exit(-1);
@@ -69,6 +60,7 @@ syscall_handler (struct intr_frame *f)
               (unsigned)*((uint32_t*)(f->esp + 16)));
       break;
     
+    /* Proj1 STDOUT, Proj2 FILE OUTPUT */
     case SYS_WRITE:
       if(!is_user_vaddr(f->esp + 4) || !is_user_vaddr(f->esp + 8) || !is_user_vaddr(f->esp + 12))
         my_exit(-1);
@@ -76,16 +68,8 @@ syscall_handler (struct intr_frame *f)
       f->eax = my_write((int)*(uint32_t*)(f->esp + 4), (void*)*(uint32_t*)(f->esp + 8), 
         (unsigned)*((uint32_t*)(f->esp + 12)));
       break;
-  
-    case SYS_SEEK:
-      break;
 
-    case SYS_TELL:
-      break;
-
-    case SYS_CLOSE:
-      break;
-
+    /* Proj1 User Program additional implementation */
     case SYS_FIBO:
       if(!is_user_vaddr(f->esp + 4))
         my_exit(-1);
@@ -100,12 +84,57 @@ syscall_handler (struct intr_frame *f)
 
       f->eax = my_max_of_four_int((int)*(uint32_t*)(f->esp + 4), (int)*(uint32_t*)(f->esp + 8), 
                       (int)*(uint32_t*)(f->esp + 12), (int)*(uint32_t*)(f->esp + 16)); 
+      break;   
+    
+    /* Proj2 User Program */
+    case SYS_CREATE:
+      if(!is_user_vaddr(f->esp + 4) || !is_user_vaddr(f->esp + 8))
+        my_exit(-1);
+      f->eax = my_create((const char*)*(uint32_t*)(f->esp + 4), (unsigned)*(uint32_t*)(f->esp + 8));
       break;
+
+    case SYS_REMOVE:
+      if(!is_user_vaddr(f->esp + 4))
+        my_exit(-1);
+      f->eax = my_remove((const char*)*(uint32_t*)(f->esp + 4));
+      break;
+
+    case SYS_OPEN:
+      if(!is_user_vaddr(f->esp + 4))
+        my_exit(-1);
+      f->eax = my_open((const char*)*(uint32_t*)(f->esp + 4));
+      break;
+
+    case SYS_FILESIZE:
+      if(!is_user_vaddr(f->esp + 4))
+        my_exit(-1);
+      f->eax = my_filesize((int)*(uint32_t*)(f->esp + 4));
+      break;
+
+    case SYS_SEEK:
+      if(!is_user_vaddr(f->esp + 4) || !is_user_vaddr(f->esp + 8))
+        my_exit(-1);
+      my_seek((int)*(uint32_t*)(f->esp + 4), (unsigned)*(uint32_t*)(f->esp + 8));
+      break;
+
+    case SYS_TELL:
+      if(!is_user_vaddr(f->esp + 4))
+        my_exit(-1);
+      f->eax = my_tell((int)*(uint32_t*)(f->esp + 4));
+      break;
+
+    case SYS_CLOSE:
+      if(!is_user_vaddr(f->esp + 4))
+        my_exit(-1);
+      my_close((int)*(uint32_t*)(f->esp + 4));
+      break;
+
   }
 
   //  thread_exit ();
 }
 
+/* Proj1 */
 void my_halt(void) {
   shutdown_power_off();
 }
@@ -124,10 +153,12 @@ int my_wait(pid_t pid) {
   return process_wait(pid);
 }
 
+/* Proj1(STDIN), Proj2(FILE INPUT) */
 int my_read(int fd, void* buffer, unsigned size) {
   int i, ret = 0;
+  struct thread* t = thread_current();
 
-  //  STDIN
+  //  Proj1 STDIN
   if(fd == 0) {
     for(i = 0; i < size; i++) {
       if((((char*)buffer)[i] = input_getc()) == '\0') 
@@ -135,20 +166,33 @@ int my_read(int fd, void* buffer, unsigned size) {
       ret += 1;
     }
   }
+  //  Proj2 FILE INPUT
+  else if(fd >= 3) 
+    ret = file_read(t->fd[fd], buffer, size);
   else ret = -1;
 
   return ret;
 }
 
+/* Proj2(STDOUT), Proj2(FILE OUPTPUT) */
 int my_write(int fd, const void* buffer, unsigned size) {
-  //  STDOUT
+  int ret = 0;
+  struct thread* t = thread_current();
+
+  //  Proj1 STDOUT
   if(fd == 1) {
     putbuf((const char*)buffer, size);
-    return size;
+    ret = size;
   }
-  else return -1;
+  //  Proj2 FILE OUTPUT
+  else if(fd >= 3)
+    ret = file_write(t->fd[fd], buffer, size);
+  else ret = -1;
+
+  return ret;
 }
 
+/* Proj1 additional implementation */
 int my_fibonacci(int n) {
   int f1 = 1, f2 = 1;
   int i, ret;
@@ -174,4 +218,57 @@ int my_max_of_four_int(int num1, int num2, int num3, int num4) {
   if(ret < num4) ret = num4;
 
   return ret; 
+}
+
+/* Proj2 */
+bool my_create(const char* file, unsigned initial_size) {
+  return filesys_create(file, initial_size);
+}
+
+bool my_remove(const char* file) {
+  return filesys_remove(file);
+}
+
+int my_open(const char* file) {
+  struct file* fp = filesys_open(file);
+  struct thread* t = thread_current();
+  int ret;
+
+  if(!fp) ret = -1;
+  
+  //  0 : STDIN, 1 : STDOUT, 2 : STDERR, 3 ~ 127 : FILE  
+  else {
+    for(ret = 3; ret < 128; ret++) {
+      if(!t->fd[ret]) {
+        t->fd[ret] = fp;
+        break;
+      }
+    }
+  }
+
+  return ret; 
+}
+
+int my_filesize(int fd) {
+  struct thread* t = thread_current();
+
+  return file_length(t->fd[fd]);
+}
+
+void my_seek(int fd, unsigned position) {
+  struct thread* t = thread_current();
+
+  file_seek(t->fd[fd], position);
+}
+
+unsigned my_tell(int fd) {
+  struct thread* t = thread_current();
+
+  return file_tell(t->fd[fd]);
+}
+
+void my_close(int fd) {
+  struct thread* t = thread_current();
+
+  file_close(t->fd[fd]); 
 }

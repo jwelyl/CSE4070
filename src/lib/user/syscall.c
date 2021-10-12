@@ -201,6 +201,7 @@ inumber (int fd)
   return syscall1 (SYS_INUMBER, fd);
 }
 
+/* Proj1 additional implementation */
 int fibonacci(int n) {
   return syscall1 (SYS_FIBO, n);
 }

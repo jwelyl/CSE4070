@@ -451,6 +451,7 @@ is_thread (struct thread *t)
 static void
 init_thread (struct thread *t, const char *name, int priority)
 {
+  int i;
   enum intr_level old_level;
 
   ASSERT (t != NULL);
@@ -475,6 +476,9 @@ init_thread (struct thread *t, const char *name, int priority)
 
   list_init(&(t->list_child));
   list_push_back(&(running_thread()->list_child), &(t->child_elm));
+
+  for(i = 0; i < 128; i++)
+    t->fd[i] = NULL;
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
