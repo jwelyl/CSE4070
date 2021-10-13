@@ -60,8 +60,10 @@ syscall_handler (struct intr_frame *f)
       if(!is_user_vaddr(f->esp + 4) || !is_user_vaddr(f->esp + 8) || !is_user_vaddr(f->esp + 12))
         my_exit(-1);
       
+     // printf("SYS_READ 주소 검사 완료 %p\n", f->esp + 8);
+      //hex_dump(f->esp + 8, f->esp + 8, 320, 1);
       f->eax = my_read((int)*(uint32_t*)(f->esp + 4), (void*)*(uint32_t*)(f->esp + 8), 
-              (unsigned)*((uint32_t*)(f->esp + 16)));
+              (unsigned)*((uint32_t*)(f->esp + 12)));
       break;
     
     /* Proj1 STDOUT, Proj2 FILE OUTPUT */
@@ -169,6 +171,8 @@ int my_read(int fd, void* buffer, unsigned size) {
   int ret = 0;
   t = thread_current();
 
+  //printf("my_read 주소 %p\n", buffer);
+  //hex_dump(buffer, buffer, 320, 1);
   //  Proj1 STDIN
   if(fd == 0) {
     for(; ret < (int)size; ret++) 
