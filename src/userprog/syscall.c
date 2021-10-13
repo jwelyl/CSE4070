@@ -13,12 +13,14 @@
 
 struct thread* t;
 struct file* fp;
+struct lock filesys_lock;
 
 static void syscall_handler (struct intr_frame *);
 
 void
 syscall_init (void) 
 {
+  lock_init(&filesys_lock);
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
@@ -173,6 +175,8 @@ int my_read(int fd, void* buffer, unsigned size) {
 
   //printf("my_read 주소 %p\n", buffer);
   //hex_dump(buffer, buffer, 320, 1);
+  
+  lock_acquire(&filesys_lock);
   //  Proj1 STDIN
   if(fd == 0) {
     for(; ret < (int)size; ret++) 
@@ -182,6 +186,7 @@ int my_read(int fd, void* buffer, unsigned size) {
   else if(fd >= 3) 
     ret = file_read(t->fd[fd], buffer, size);
   else ret = -1;
+  lock_release(&filesys_lock);
 
   return ret;
 }
@@ -191,6 +196,7 @@ int my_write(int fd, const void* buffer, unsigned size) {
   int ret = 0;
   t = thread_current();
 
+  lock_acquire(&filesys_lock);
   //  Proj1 STDOUT
   if(fd == 1) {
     putbuf((const char*)buffer, size);
@@ -200,6 +206,7 @@ int my_write(int fd, const void* buffer, unsigned size) {
   else if(fd >= 3)
     ret = file_write(t->fd[fd], buffer, size);
   else ret = -1;
+  lock_release(&filesys_lock);
 
   return ret;
 }
@@ -250,9 +257,11 @@ int my_open(const char* file) {
   
   if(!file) my_exit(-1);
 
+  lock_acquire(&filesys_lock);
   fp = filesys_open(file);
 
-  if(!fp) ret = -1;
+  if(!fp) 
+    ret = -1;
 
   //  0 : STDIN, 1 : STDOUT, 2 : STDERR, 3 ~ 127 : FILE
   else {
@@ -263,6 +272,7 @@ int my_open(const char* file) {
       }
     }
   }
+  lock_release(&filesys_lock);
 
   return ret; 
 }
