@@ -144,9 +144,15 @@ void my_halt(void) {
 }
 
 void my_exit(int status) {
+  int i;
+  t = thread_current();
   printf("%s: exit(%d)\n", thread_name(), status);
-  thread_current() -> exit_status = status;
+  t->exit_status = status;
 
+  for(i = 3; i < 128; i++) {
+    fp = t->fd[i];
+    if(fp) file_close(fp); 
+  }
   thread_exit();
 }
 
@@ -278,6 +284,9 @@ unsigned my_tell(int fd) {
 
 void my_close(int fd) {
   t = thread_current();
+
+  if(!t->fd[fd]) my_exit(-1);
+  t->fd[fd] = NULL;
 
   file_close(t->fd[fd]); 
 }
