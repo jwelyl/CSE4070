@@ -10,6 +10,9 @@
 #include "filesys/file.h"
 #include "filesys/filesys.h"
 
+struct thread* t;
+struct file* fp;
+
 static void syscall_handler (struct intr_frame *);
 
 void
@@ -140,8 +143,13 @@ void my_halt(void) {
 }
 
 void my_exit(int status) {
+  int i;
+  t = thread_current(); 
   printf("%s: exit(%d)\n", thread_name(), status);
-  thread_current() -> exit_status = status;
+  t -> exit_status = status;
+
+  for(i = 3; i < 128; i++) 
+    if(t->fd[i]) my_close(i);
   thread_exit();
 }
 
@@ -156,7 +164,9 @@ int my_wait(pid_t pid) {
 /* Proj1(STDIN), Proj2(FILE INPUT) */
 int my_read(int fd, void* buffer, unsigned size) {
   int i, ret = 0;
-  struct thread* t = thread_current();
+  t = thread_current();
+
+  if(!is_user_vaddr(buffer)) my_exit(-1);
 
   //  Proj1 STDIN
   if(fd == 0) {
@@ -177,7 +187,9 @@ int my_read(int fd, void* buffer, unsigned size) {
 /* Proj2(STDOUT), Proj2(FILE OUPTPUT) */
 int my_write(int fd, const void* buffer, unsigned size) {
   int ret = 0;
-  struct thread* t = thread_current();
+  t = thread_current();
+
+  if(!is_user_vaddr(buffer)) my_exit(-1);
 
   //  Proj1 STDOUT
   if(fd == 1) {
@@ -222,22 +234,33 @@ int my_max_of_four_int(int num1, int num2, int num3, int num4) {
 
 /* Proj2 */
 bool my_create(const char* file, unsigned initial_size) {
+  if(!file) my_exit(-1);
+  else if(!is_user_vaddr(file)) my_exit(-1);
+  
   return filesys_create(file, initial_size);
 }
 
 bool my_remove(const char* file) {
+  if(!file) my_exit(-1);
+  else if(!is_user_vaddr(file)) my_exit(-1);
+
   return filesys_remove(file);
 }
 
 int my_open(const char* file) {
-  struct file* fp = filesys_open(file);
-  struct thread* t = thread_current();
   int ret;
-
-  if(!fp) ret = -1;
   
+  if(!file) my_exit(-1);
+  else if(!is_user_vaddr(file)) my_exit(-1);
+ 
+  fp = filesys_open(file);
+  if(!fp) ret = -1; 
   //  0 : STDIN, 1 : STDOUT, 2 : STDERR, 3 ~ 127 : FILE  
   else {
+    fp = filesys_open(file);
+
+    if(!fp) my_exit(-1);
+
     for(ret = 3; ret < 128; ret++) {
       if(!t->fd[ret]) {
         t->fd[ret] = fp;
@@ -250,25 +273,30 @@ int my_open(const char* file) {
 }
 
 int my_filesize(int fd) {
-  struct thread* t = thread_current();
+  t = thread_current();
+  if(!t->fd[fd]) my_exit(-1);
 
   return file_length(t->fd[fd]);
 }
 
 void my_seek(int fd, unsigned position) {
-  struct thread* t = thread_current();
+  t = thread_current();
+  if(!t->fd[fd]) my_exit(-1);
 
   file_seek(t->fd[fd], position);
 }
 
 unsigned my_tell(int fd) {
-  struct thread* t = thread_current();
+  t = thread_current();
+  if(!t->fd[fd]) my_exit(-1);
 
   return file_tell(t->fd[fd]);
 }
 
 void my_close(int fd) {
-  struct thread* t = thread_current();
+  t = thread_current();
+  if(!t->fd[fd]) my_exit(-1);
 
+  t->fd[fd] = NULL;
   file_close(t->fd[fd]); 
 }
