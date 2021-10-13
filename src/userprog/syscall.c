@@ -11,6 +11,9 @@
 #include "filesys/file.h"
 #include "filesys/filesys.h"
 
+struct thread* t;
+struct file* fp;
+
 static void syscall_handler (struct intr_frame *);
 
 void
@@ -158,7 +161,7 @@ int my_wait(pid_t pid) {
 /* Proj1(STDIN), Proj2(FILE INPUT) */
 int my_read(int fd, void* buffer, unsigned size) {
   int ret = 0;
-  struct thread* t = thread_current();
+  t = thread_current();
 
   //  Proj1 STDIN
   if(fd == 0) {
@@ -176,7 +179,7 @@ int my_read(int fd, void* buffer, unsigned size) {
 /* Proj2(STDOUT), Proj2(FILE OUPTPUT) */
 int my_write(int fd, const void* buffer, unsigned size) {
   int ret = 0;
-  struct thread* t = thread_current();
+  t = thread_current();
 
   //  Proj1 STDOUT
   if(fd == 1) {
@@ -221,17 +224,23 @@ int my_max_of_four_int(int num1, int num2, int num3, int num4) {
 
 /* Proj2 */
 bool my_create(const char* file, unsigned initial_size) {
+  if(!file) my_exit(-1);
+
   return filesys_create(file, initial_size);
 }
 
 bool my_remove(const char* file) {
+  if(!file) my_exit(-1);
   return filesys_remove(file);
 }
 
 int my_open(const char* file) {
-  struct thread* t = thread_current();
-  struct file* fp = filesys_open(file);
   int ret;
+  t = thread_current();
+  
+  if(!file) my_exit(-1);
+
+  fp = filesys_open(file);
 
   if(!fp) ret = -1;
 
@@ -249,26 +258,26 @@ int my_open(const char* file) {
 }
 
 int my_filesize(int fd) {
-  struct thread* t = thread_current();
+  t = thread_current();
 
   return file_length(t->fd[fd]);
 }
 
 void my_seek(int fd, unsigned position) {
-  struct thread* t = thread_current();
+  t = thread_current();
   if(!t->fd[fd]) my_exit(-1);
 
   file_seek(t->fd[fd], position);
 }
 
 unsigned my_tell(int fd) {
-  struct thread* t = thread_current();
+  t = thread_current();
 
   return file_tell(t->fd[fd]);
 }
 
 void my_close(int fd) {
-  struct thread* t = thread_current();
+  t = thread_current();
 
   file_close(t->fd[fd]); 
 }
