@@ -1,5 +1,6 @@
 #include "userprog/syscall.h"
 #include <stdio.h>
+#include <string.h>
 #include <syscall-nr.h>
 #include "devices/shutdown.h"
 #include "devices/input.h"
@@ -203,8 +204,10 @@ int my_write(int fd, const void* buffer, unsigned size) {
     ret = size;
   }
   //  Proj2 FILE OUTPUT
-  else if(fd >= 3)
+  else if(fd >= 3) {
+    if(t->fd[fd]->deny_write) file_deny_write(t->fd[fd]);
     ret = file_write(t->fd[fd], buffer, size);
+  }
   else ret = -1;
   lock_release(&filesys_lock);
 
@@ -265,8 +268,11 @@ int my_open(const char* file) {
 
   //  0 : STDIN, 1 : STDOUT, 2 : STDERR, 3 ~ 127 : FILE
   else {
+    //printf("thread 이름 : %s\n", thread_name());
     for(ret = 3; ret < 128; ret++) {
       if(!t->fd[ret]) {
+        if(!strcmp(thread_name(), file))
+          file_deny_write(fp); 
         t->fd[ret] = fp;
         break;
       }
