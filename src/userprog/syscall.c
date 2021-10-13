@@ -143,6 +143,7 @@ void my_halt(void) {
 void my_exit(int status) {
   printf("%s: exit(%d)\n", thread_name(), status);
   thread_current() -> exit_status = status;
+
   thread_exit();
 }
 
@@ -161,7 +162,7 @@ int my_read(int fd, void* buffer, unsigned size) {
 
   //  Proj1 STDIN
   if(fd == 0) {
-    for(; ret < (int)size; ret) 
+    for(; ret < (int)size; ret++) 
       if(input_getc() == '\0') break;
   }
   //  Proj2 FILE INPUT
@@ -228,13 +229,13 @@ bool my_remove(const char* file) {
 }
 
 int my_open(const char* file) {
-  struct file* fp = filesys_open(file);
   struct thread* t = thread_current();
+  struct file* fp = filesys_open(file);
   int ret;
 
   if(!fp) ret = -1;
-  
-  //  0 : STDIN, 1 : STDOUT, 2 : STDERR, 3 ~ 127 : FILE  
+
+  //  0 : STDIN, 1 : STDOUT, 2 : STDERR, 3 ~ 127 : FILE
   else {
     for(ret = 3; ret < 128; ret++) {
       if(!t->fd[ret]) {
@@ -255,6 +256,7 @@ int my_filesize(int fd) {
 
 void my_seek(int fd, unsigned position) {
   struct thread* t = thread_current();
+  if(!t->fd[fd]) my_exit(-1);
 
   file_seek(t->fd[fd], position);
 }
