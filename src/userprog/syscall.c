@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <syscall-nr.h>
 #include "devices/shutdown.h"
+#include "devices/input.h"
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
@@ -155,16 +156,13 @@ int my_wait(pid_t pid) {
 
 /* Proj1(STDIN), Proj2(FILE INPUT) */
 int my_read(int fd, void* buffer, unsigned size) {
-  int i, ret = 0;
+  int ret = 0;
   struct thread* t = thread_current();
 
   //  Proj1 STDIN
   if(fd == 0) {
-    for(i = 0; i < size; i++) {
-      if((((char*)buffer)[i] = input_getc()) == '\0') 
-        break;
-      ret += 1;
-    }
+    for(; ret < (int)size; ret) 
+      if(input_getc() == '\0') break;
   }
   //  Proj2 FILE INPUT
   else if(fd >= 3) 
