@@ -151,7 +151,7 @@ page_fault (struct intr_frame *f)
   user = (f->error_code & PF_U) != 0;
 
   /* user access이고 user memory에 접근하는 경우 */
-  if(user && is_user_vaddr(fault_addr)) {
+  if(user && is_user_vaddr(fault_addr) && !not_present) {
     /* To implement virtual memory, delete the rest of the function
        body, and replace it with code that brings in the page to
       which fault_addr refers. */

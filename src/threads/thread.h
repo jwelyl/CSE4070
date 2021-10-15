@@ -109,7 +109,7 @@ struct thread
 
     struct semaphore wait_lock;
     struct semaphore execute_lock;
-
+    
     //  file descriptor
     struct file* fd[128];
     //  int fd[128];
