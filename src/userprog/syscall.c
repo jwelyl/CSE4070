@@ -287,6 +287,7 @@ int my_open(const char* file) {
 
 int my_filesize(int fd) {
   t = thread_current();
+  if(!t->fd[fd]) my_exit(-1);
 
   return file_length(t->fd[fd]);
 }
@@ -300,6 +301,7 @@ void my_seek(int fd, unsigned position) {
 
 unsigned my_tell(int fd) {
   t = thread_current();
+  if(!t->fd[fd]) my_exit(-1);
 
   return file_tell(t->fd[fd]);
 }
