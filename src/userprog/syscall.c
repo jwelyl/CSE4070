@@ -186,8 +186,13 @@ int my_read(int fd, void* buffer, unsigned size) {
       if(input_getc() == '\0') break;
   }
   //  Proj2 FILE INPUT
-  else if(fd >= 3) 
+  else if(fd >= 3) {
+    if(!t->fd[fd]) {
+      lock_release(&filesys_lock);      
+      my_exit(-1);
+    }
     ret = file_read(t->fd[fd], buffer, size);
+  }
   else ret = -1;
   lock_release(&filesys_lock);
 
@@ -207,6 +212,10 @@ int my_write(int fd, const void* buffer, unsigned size) {
   }
   //  Proj2 FILE OUTPUT
   else if(fd >= 3) {
+    if(!t->fd[fd]) {
+      lock_release(&filesys_lock);
+      my_exit(-1);
+    }
 
     if(t->fd[fd]->deny_write) file_deny_write(t->fd[fd]);
     ret = file_write(t->fd[fd], buffer, size);
@@ -311,7 +320,7 @@ void my_close(int fd) {
   t = thread_current();
 
   if(!t->fd[fd]) my_exit(-1);
-  t->fd[fd] = NULL;
 
-  file_close(t->fd[fd]); 
+  file_close(t->fd[fd]);
+  t->fd[fd] = NULL; 
 }
