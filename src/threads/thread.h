@@ -99,6 +99,7 @@ struct thread
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
 #endif
+    /* Proj 1 */
     //  thread 종료 상태
     int exit_status;
     //  thread file descriptor
@@ -109,10 +110,15 @@ struct thread
 
     struct semaphore wait_lock;
     struct semaphore execute_lock;
-    
+
+    /* Proj 2 */    
     //  file descriptor
     struct file* fd[128];
-    //  int fd[128];
+
+    /* Proj 3 */
+    //  thread 깨울 시간
+    int64_t wakeup;
+
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
