@@ -117,8 +117,7 @@ process_wait (tid_t child_tid)
     if(child_tid == t->tid) {
      
       sema_down(&(t->wait_lock));
-      sema_up(&(t->execute_lock));
-      
+      sema_up(&(t->execute_lock)); 
       ret = t->exit_status;
       list_remove(&(t->child_elm));
       break;

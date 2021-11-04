@@ -172,9 +172,10 @@ int my_wait(pid_t pid) {
 /* Proj1(STDIN), Proj2(FILE INPUT) */
 int my_read(int fd, void* buffer, unsigned size) {
   int ret = 0;
-  t = thread_current();
+  //t = thread_current();
 
   lock_acquire(&filesys_lock);
+  t = thread_current();
   //printf("my_read 주소 %p\n", buffer);
   //hex_dump(buffer, buffer, 320, 1);
   if(!is_user_vaddr(buffer))
@@ -203,8 +204,9 @@ int my_read(int fd, void* buffer, unsigned size) {
 int my_write(int fd, const void* buffer, unsigned size) {
   int ret = 0;
   
-  t = thread_current();
+  //t = thread_current();
   lock_acquire(&filesys_lock);
+  t = thread_current();
   //  Proj1 STDOUT
   if(fd == 1) {
     putbuf((const char*)buffer, size);
@@ -268,11 +270,12 @@ bool my_remove(const char* file) {
 
 int my_open(const char* file) {
   int ret;
-  t = thread_current();
+  //t = thread_current();
   
   if(!file) my_exit(-1);
 
   lock_acquire(&filesys_lock);
+  t = thread_current();
   fp = filesys_open(file);
 
   if(!fp) 
@@ -281,9 +284,10 @@ int my_open(const char* file) {
   //  0 : STDIN, 1 : STDOUT, 2 : STDERR, 3 ~ 127 : FILE
   else {
     //printf("thread 이름 : %s\n", thread_name());
+          
     for(ret = 3; ret < 128; ret++) {
       if(!t->fd[ret]) {
-        if(!strcmp(thread_name(), file))
+        if(!strcmp(t->name, file))
           file_deny_write(fp); 
         t->fd[ret] = fp;
         break;
