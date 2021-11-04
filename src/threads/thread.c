@@ -201,6 +201,11 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
+  /* Proj 3 */
+  //  현재 thread의 priority보다 새로 생성한 thread의 priority가 높을 경우 rescheduling
+  if(thread_current()->priority < priority)
+    thread_yield();
+
   return tid;
 }
 
@@ -237,7 +242,12 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+
+  /* Proj 3 */
+  //  thread_yield() 와 같이 변경
+  //  list_push_back (&ready_list, &t->elem);
+  list_insert_ordered(&ready_list, &t->elem, priority_comp_dec, NULL);
+  
   t->status = THREAD_READY;
   intr_set_level (old_level);
 }
@@ -307,8 +317,13 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-  if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+
+  if (cur != idle_thread) {
+    /* Proj 3 */
+    //  Round Robin에서 priority 고려한 scheduling으로 변경
+    //  list_push_back (&ready_list, &cur->elem); //  RR
+    list_insert_ordered(&ready_list, &cur->elem, priority_comp_dec, NULL);
+  }
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -335,7 +350,15 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+  /* Proj 3 */
+  //  priority가 감소한 경우, rescheduling 필요할 수도 있음
+  thread_current ()->priority = new_priority; //  현재 실행되고 있는 thread priority 변경
+  if(!list_empty(&ready_list)) {
+    struct thread* highest = list_entry(list_front(&ready_list), struct thread, elem);
+
+    if(new_priority < highest->priority)
+      thread_yield();
+  }
 }
 
 /* Returns the current thread's priority. */
@@ -598,3 +621,20 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+/* Proj 3 */
+//  ready queue에 thread가 삽입될 때 priority가 높은 thread가
+//  ready queue의 앞에 삽입되도록 비교 함수 설정
+bool priority_comp_dec(
+  const struct list_elem* a,
+  const struct list_elem* b,
+  void* aux) {
+  struct thread* t_a = list_entry(a, struct thread, elem);
+  struct thread* t_b = list_entry(b, struct thread, elem);
+  bool ret;
+  
+  if(t_a->priority > t_b->priority) ret = true;
+  else ret = false;
+
+  return ret;
+}
