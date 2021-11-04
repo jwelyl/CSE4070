@@ -7,6 +7,9 @@
 /* Number of timer interrupts per second. */
 #define TIMER_FREQ 100
 
+/* Proj 3 */
+void wake_up(void);
+
 void timer_init (void);
 void timer_calibrate (void);
 
