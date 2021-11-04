@@ -109,15 +109,44 @@ void
 sema_up (struct semaphore *sema) 
 {
   enum intr_level old_level;
+  /* Proj 3 */
+  struct thread *cur;           //  list 내 thread 순회할 포인터
+  struct thread *highest_t;     //  가장 우선순위가 높은 thread 포인터
+  struct list_elem *e;          //  list 순회할 포인터
+  struct list_elem *highest_e;  //  가장 우선순위가 높은 thread의 element 
+  int max_priority;             //  가장 높은 우선 순위
 
   ASSERT (sema != NULL);
 
   old_level = intr_disable ();
-  if (!list_empty (&sema->waiters)) 
-    thread_unblock (list_entry (list_pop_front (&sema->waiters),
-                                struct thread, elem));
+
+  /* Proj 3 */
+  if (!list_empty (&sema->waiters)) {
+    //  각 포인터, 변수 초기화
+    e = list_begin(&sema->waiters);
+    highest_e = e;
+    highest_t = list_entry(highest_e, struct thread, elem);
+    max_priority = highest_t->priority;
+
+    /* list를 순회하며 priority가 최대인 thread 찾음*/
+    while(e != list_end(&sema->waiters)) {
+      cur = list_entry(e, struct thread, elem);
+      if(cur->priority > max_priority) {
+        max_priority = cur->priority; //  priority 갱신
+        highest_t = cur;  //  pointer 갱신
+        highest_e = e;
+      }
+      e = list_next(e);
+    }
+
+    list_remove(highest_e);     //  priority가 높은 thread를 wait list에서 제거
+    thread_unblock(highest_t);  //  ready queue로 보냄
+  }
+
   sema->value++;
   intr_set_level (old_level);
+
+  thread_yield(); //  rescheduling
 }
 
 static void sema_test_helper (void *sema_);
