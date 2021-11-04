@@ -7,6 +7,11 @@
 #include "synch.h"
 #include "filesys/file.h"
 
+#ifndef USERPROG
+/* Proj 3 */
+extern bool thread_prior_aging;
+#endif
+
 /* States in a thread's life cycle. */
 enum thread_status
   {
@@ -164,5 +169,7 @@ bool priority_comp_dec(
   const struct list_elem* a,
   const struct list_elem* b, 
   void* aux);
+
+void thread_aging(void);
 
 #endif /* threads/thread.h */

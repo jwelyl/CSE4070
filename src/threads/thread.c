@@ -54,6 +54,11 @@ static long long user_ticks;    /* # of timer ticks in user programs. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
 
+#ifndef USERPROG
+/* Proj 3 */
+bool thread_prior_aging;
+#endif
+
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
@@ -137,6 +142,12 @@ thread_tick (void)
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
+
+#ifndef USERPROG
+  /* Proj 3 */
+  if(thread_prior_aging == true)
+    thread_aging();
+#endif
 }
 
 /* Prints thread statistics. */
@@ -637,4 +648,18 @@ bool priority_comp_dec(
   else ret = false;
 
   return ret;
+}
+
+/* Proj 3 */
+void thread_aging(void) {
+  struct list_elem* elm = list_begin(&ready_list);
+  struct thread* cur = NULL;
+
+  //  aging을 사용할 경우 ready queue의 모든 thread들을 확인하여 우선순위를 1 증가시킴
+  while(elm != list_end(&ready_list)) {
+     cur = list_entry(elm, struct thread, elem);
+     if(cur->priority < PRI_MAX) 
+        cur->priority++;
+      elm = list_next(elm);
+  }
 }
