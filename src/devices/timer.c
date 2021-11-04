@@ -17,6 +17,10 @@
 #error TIMER_FREQ <= 1000 recommended
 #endif
 
+/* Proj 3 */
+//  sleep 상태의 thread를 저장하는 queue
+static struct list sleep_queue;
+
 /* Number of timer ticks since OS booted. */
 static int64_t ticks;
 
@@ -35,6 +39,7 @@ static void real_time_delay (int64_t num, int32_t denom);
 void
 timer_init (void) 
 {
+  list_init(&sleep_queue);
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
 }
@@ -89,11 +94,23 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks) 
 {
-  int64_t start = timer_ticks ();
+  int64_t start = timer_ticks (); //  thread가 잠들기 시작한 시간
+  struct thread* cur = thread_current();
+  enum intr_level old_level;
 
   ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks) 
-    thread_yield ();
+  
+  /* Proj 3 */
+  //  Busy Waiting을 변경
+  //while (timer_elapsed (start) < ticks) 
+  //  thread_yield ();
+
+  old_level = intr_disable();   //  interrupt 끔
+  cur->wakeup = start + ticks;  //  thread가 깨어날 시간
+  list_push_back(&sleep_queue, &cur->elem); //  sleep queue에 현재 thread 저장
+
+  thread_block(); 
+  intr_set_level(old_level);
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -165,12 +182,37 @@ timer_print_stats (void)
 {
   printf ("Timer: %"PRId64" ticks\n", timer_ticks ());
 }
+
+/* Proj 3 */
+//  sleep queue에 저장된 thread 중 깨울 시간이 된 thread를 모두 깨운 후 queue에서 제거
+void wake_up() {
+  struct thread* cur;
+  struct list_elem* elm = list_begin(&sleep_queue);
+  /**
+   *  sleep queue를 앞에서부터 확인하여
+   *  깨울 시간이 된 thread를 모두 깨움
+   **/  
+  while(elm != list_end(&sleep_queue)) {
+    cur = list_entry(elm, struct thread, elem);
+
+    if(cur->wakeup <= ticks) {
+      elm = list_remove(elm);
+      thread_unblock(cur);  //  현재 thread를 ready 상태로 변경
+    }
+    else elm = list_next(elm);
+  }
+}
+
 
 /* Timer interrupt handler. */
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
+  
+  /* Proj 3 */
+  wake_up();
+
   thread_tick ();
 }
 

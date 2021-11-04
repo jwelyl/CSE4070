@@ -98,11 +98,11 @@ struct thread
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
-#endif
+    
+    /* Proj 1 */
     //  thread 종료 상태
     int exit_status;
-    //  thread file descriptor
-    
+
     //  thread의 child list
     struct list list_child;
     struct list_elem child_elm;
@@ -110,9 +110,14 @@ struct thread
     struct semaphore wait_lock;
     struct semaphore execute_lock;
     
+    /* Proj 2 */
     //  file descriptor
     struct file* fd[128];
     //  int fd[128];
+#endif
+
+    /* Proj 3 */
+    int64_t wakeup;   //  thread가 sleep에서 깨어나는 시간
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */

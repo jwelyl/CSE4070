@@ -470,15 +470,19 @@ init_thread (struct thread *t, const char *name, int priority)
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);
-  
+ 
+#ifdef USERPROG 
+  /* Proj 1 */
   sema_init(&(t->wait_lock), 0);
   sema_init(&(t->execute_lock), 0);
 
   list_init(&(t->list_child));
   list_push_back(&(running_thread()->list_child), &(t->child_elm));
 
+  /* Proj 2 */
   for(i = 0; i < 128; i++)
     t->fd[i] = NULL;
+#endif
 }
 
 /* Allocates a SIZE-byte frame at the top of thread T's stack and
