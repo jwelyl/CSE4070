@@ -120,6 +120,7 @@ sema_up (struct semaphore *sema)
 
   old_level = intr_disable ();
 
+#ifndef USERPROG
   /* Proj 3 */
   if (!list_empty (&sema->waiters)) {
     //  각 포인터, 변수 초기화
@@ -142,11 +143,20 @@ sema_up (struct semaphore *sema)
     list_remove(highest_e);     //  priority가 높은 thread를 wait list에서 제거
     thread_unblock(highest_t);  //  ready queue로 보냄
   }
+#endif
+
+#ifdef USERPROG
+  if (!list_empty (&sema->waiters))
+    thread_unblock (list_entry (list_pop_front (&sema->waiters),
+                                struct thread, elem));
+#endif
 
   sema->value++;
   intr_set_level (old_level);
 
+#ifndef USERPROG
   thread_yield(); //  rescheduling
+#endif
 }
 
 static void sema_test_helper (void *sema_);
