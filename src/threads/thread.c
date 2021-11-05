@@ -362,13 +362,17 @@ void
 thread_set_priority (int new_priority) 
 {
   /* Proj 3 */
-  //  priority가 감소한 경우, rescheduling 필요할 수도 있음
+  int prev_priority = thread_current()->priority;
   thread_current ()->priority = new_priority; //  현재 실행되고 있는 thread priority 변경
-  if(!list_empty(&ready_list)) {
-    struct thread* highest = list_entry(list_front(&ready_list), struct thread, elem);
+ 
+  //  priority가 감소한 경우, rescheduling이 필요할 수도 있음 
+  if(prev_priority > new_priority) {
+    if(!list_empty(&ready_list)) {
+      struct thread* highest = list_entry(list_front(&ready_list), struct thread, elem);
 
-    if(new_priority < highest->priority)
-      thread_yield();
+      if(new_priority < highest->priority)
+        thread_yield();
+    }
   }
 }
 
